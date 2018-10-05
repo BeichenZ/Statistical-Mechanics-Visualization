@@ -73,8 +73,70 @@ class SimpleHarmonicOscillatorPF:
             plt.show()
         return S
 
+#Sturge, Qn 5.5, Part F.Treat it as an ideal gas
+class diatomicPF():
+    #TODO: set to real values of E0 and R0
+    E0 = 1.1
+    R0 = 1
+    def __init__(self, maxJ = 100, tRange = [1 3000]):
+        self.maxJ = maxJ
+        self.tRange = tRange
+
+    def PF(self, graph = False):
+        def g(j):
+            return 2*j+1
+        def E(j):
+            return E0*j*(j+1)
+        T = np.linspace( self.tRange[0], self.tRange[1], 100)
+        Y = [ self.PFonT(g,E,t) for t in T  ]
+        if graph:
+            plt.plot(T,Y)
+            plt.show()
+        return [T,Y]
+
+    #TODO:Vectorize the Calculation for Better efficiency
+    def PFonT(self,g , E, T):
+        acc = 0
+        for j in range( 1, self.maxJ+1 ):
+            acc = acc + g(j)*np.exp(-1/(Kb*T)*E(j))
+        return acc
+
+    #pf : [T,Y] contains numerical points on the partition function
+    def AE(self, pf ):
+        T = pf[0]
+        beta = [ 1/t*Kb for t in T]
+        Z = pf[1]
+        Z = np.log(Z)
+        dZ = centerDifferenceMethod(T,Y)
+        return [T,-1*dZ]
 
 
+    #Rotational contribution to molar heat capacity
+    def Cv_rot(self, AE,graph = False ):
+        T = AE[0]
+        Ea = AE[1]
+        Cv = centerDifferenceMethod(T,Ea)
+        if graph:
+            x = [t*Kb/self.E0 for t in T]
+            y = [ c/R0 for C in Cv]
+            plt.plot(x,y)
+            plt.show()
+        return [T,Cv]
+
+#
+#General Numerical Approximation Functions
+#
+#TODO:Verify the accuracy of this method.Implement more if needed
+#
+#2nd Order Method
+def centerDifferenceMethod(self,x=[],y=[]):
+    #head and tail
+    dY = np.zeros( len(x) )
+    dY[0] = (y[1]-y[0])/(x[1]-x[0])
+    dY[-1] = (y[-1]-y[-2])/(x[-1]-x[-2])
+    for i in range(1,len(x)):
+        dY[i] = (y[i+1]-y[i-1])/(x[i+1]-x[i-1])
+    return []
 
 def demonstration():
     print("Usage Demonstration")
