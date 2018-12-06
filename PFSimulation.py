@@ -4,6 +4,8 @@ from decimal import Decimal as dm
 import numpy as np
 import mpmath
 import matplotlib.pyplot as plt
+import pdb
+import time
 from scipy import constants
 #Partion Function
 #Some Constants
@@ -44,7 +46,44 @@ class SimpleHarmonicOscillatorPF:
     #       freq = natural oscillation frequency
     #       
     #Unit: All energy is in unit of eV
-    def PF(self,tmpRange,freq=3e12, interval = 50,maxn = 1000000,graph = True):
+    def PF_Fast(self,tmpRange,freq=3e12, interval = 50,maxn = 1e7,graph = True):
+        #simple profiling:
+        start_time = time.time()
+
+        parallelRowCnt = 1e4
+        rowInterval = int(maxn/parallelRowCnt)
+        T = np.linspace( tmpRange[0], tmpRange[1], interval)
+        omega = freq*2*np.pi
+        #k1 = /beta* H_bar = 1.43878e-11 * 1/T
+        k1 = 1.43878e-11/T
+        C1 = np.exp(-k1*omega/2)
+        C2 = np.exp(-k1*omega)
+        #Vectorize the operation:
+        C1 = np.tile(C1,(parallelRowCnt,1))
+        C2 = np.tile(C2,(parallelRowCnt,1))
+        n  = np.arange(0,maxn,rowInterval).reshape(parallelRowCnt,1) #create basis for power of n
+        n = np.tile(n,(1,interval))
+
+        #P = C1*Sum(C2^n)
+        P = np.zeros((parallelRowCnt,interval))
+        for adder in range(rowInterval):
+            #pdb.set_trace()
+            P = P + np.power(C2,n)   
+        P = P * C1 
+        
+        #Sum All Rows in P
+        P = np.sum(P,axis=0)         
+        #Plot Partition Function VS Temeprature
+        if graph:
+            plt.plot(T,P)
+            #simple profiling:
+            print('PF takes seconds:'+str(time.time()-start_time))
+
+            plt.show()
+        return P
+
+    def PF(self,tmpRange,freq=3e12, interval = 50,maxn = 1e7,graph = True):
+        start_Time = time.time()
         T = np.linspace( tmpRange[0], tmpRange[1], interval)
         omega = freq*2*np.pi
         #k1 = /beta* H_bar = 1.43878e-11 * 1/T
@@ -54,15 +93,16 @@ class SimpleHarmonicOscillatorPF:
 
         #P = C1*Sum(C2^n)
         P = np.zeros(interval)
-        for n in range(interval):
+        for n in range(int(maxn)):
             P = P + np.power(C2,n)   
         P = P * C1 
          
         #Plot Partition Function VS Temeprature
         if graph:
             plt.plot(T,P)
+            print('Base PF takes second:'+str(time.time()-start_Time))
             plt.show()
-        return P
+        return P    
 
     #
     #TODO:Consider Make FE,AE,S to be a generic function. Here, we use analytical Solution
@@ -174,8 +214,9 @@ def demonstration():
     freq = 100
     nu = np.linspace(1, 10, num=100)
     sho1d = SimpleHarmonicOscillatorPF(freq)
-    sho1d.PF([100,373],1e12)
-    sho1d.PF_Theory([100,373],1e12)
+    sho1d.PF([100,373],1000)
+    sho1d.PF_Fast([100,373],1000)
+    sho1d.PF_Theory([100,373],1000)
    #sho1d.PF_Theory(nu)
     #sho1d.Entropy(nu)
     #sho1d.AE(nu)
