@@ -117,16 +117,31 @@ class SimpleHarmonicOscillatorPF:
 
     #Free Energy
     #For Now: use analytic solutions
-    def FE_Theory(self,x,graph = False):
-        beta = [1 / Kb * v for v in x]
-        y = [Heta*self.freq/2 + (1/b)*np.log(1-np.exp(-b*Heta*self.freq)) for b in beta]
+    def FE_Theory(self,PF,graph = False):
+        [T,_] = PF
+        omega = self.freq*2*np.pi
+        k1 = 7.6382e-12/T
+        A = HETA*omega/2 + (Kb*T)*np.log(1 - np.exp(-k1*omega))
+        pdb.set_trace()
         if graph:
             plt.plt(beta,y)
             plt.show()
-        return y
-    def FE(self,tmpRange,graph = True):
-        pass
+        return [T,A]
+    def FE(self,PF,graph = True):
+        T = PF[0]
+        P = PF[1]
+        A = -(Kb*T)*np.log(P)
+        [T_theory,A_theory] = self.FE_Theory(PF) 
+        if graph:
+           plt.plot(T,A,label='Approximated')
+           plt.plot(T_theory,A_theory,label='Theory')
+           plt.ylabel("<Average Free Energy> (J)")
+           plt.xlabel("Temeprate (K)")
+           plt.title("Average Free Energy VS Temperature for SHO")
+           plt.legend()
+           plt.show()
 
+        return [T,A]
         
 
     #Average Energy
@@ -246,15 +261,16 @@ def centerDifferenceMethod(self,x=[],y=[]):
         dY[i] = (y[i+1]-y[i-1])/(x[i+1]-x[i-1])
     return []
 
-def demonstration():
+def SHO_Demonstration():
     print("Usage Demonstration")
+    graph = True
     sho1d = SimpleHarmonicOscillatorPF()
-    sho1d.PF([100,373])
-    PFsho=sho1d.PF_Theory([100,373])
-    sho1d.AE(PF=PFsho)
-
+    PFsho = sho1d.PF([100,373],graph=graph)
+    sho1d.PF_Theory([100,373],graph=graph)
+    sho1d.AE(PF=PFsho,graph=graph)
+    sho1d.FE(PF=PFsho,graph=graph)
 
 if __name__ == "__main__":
     DM.getcontext().prec = DMPREC
-    demonstration()
+    SHO_Demonstration()
     
