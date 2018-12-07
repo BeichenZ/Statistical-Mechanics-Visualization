@@ -15,13 +15,14 @@ from scipy import constants
 #
 #Kb = dm(constants.k)    #Unit:m2*kg*s-2*K-1
 #Heta = dm(constants.h)#Unit:Js
-Kb = 1e-5
-Heta =2e-5
+Kb = 1.38064e-23
+HETA =1.054571e-34
 DMPREC = 40
 class SimpleHarmonicOscillatorPF:
     #freq is a list of frequency
-    def __init__(self,freq):
-        self.freq = freq
+    def __init__(self):
+        self.freq = 3e12 #Default Natural Frequency which will make the simulation converge at fa faster rate
+        self.interval = 50 #number of data points in the plot
         #Set decimal precision
         DM.getcontext().prec= DMPREC
 
@@ -34,34 +35,36 @@ class SimpleHarmonicOscillatorPF:
         T = np.linspace( tmpRange[0], tmpRange[1], interval)
         omega = freq*2*np.pi
         #k1 = beta* H_bar = 1.43878e-11 * 1/T
-        k1 = 1.43878e-11/T
+        k1 = 7.6382e-12/T
         P = np.exp(-0.5*k1*omega)/(1-np.exp(-k1*omega))
         if graph:
             plt.plot(T,P)
+            plt.title('Theoretical PF for SMO at Freq:%f' % freq)
             plt.show()
-        return P
+        return [T,P]
     #
     #Input: tmpRange = [lowtemp,hightemp]
     #       interval = # of data points between these two intervals
     #       freq = natural oscillation frequency
     #       
     #Unit: All energy is in unit of eV
-    def PF_Fast(self,tmpRange,freq=3e12, interval = 50,maxn = 1e7,graph = True):
+    #TODO: This function is fast buy not accurate under current maxn. Require further look
+    def PF_Fast(self,tmpRange,freq=3e12, interval = 50,maxn = 1e5,graph = True):
         #simple profiling:
         start_time = time.time()
 
-        parallelRowCnt = 1e4
+        parallelRowCnt = int(1e4)
         rowInterval = int(maxn/parallelRowCnt)
         T = np.linspace( tmpRange[0], tmpRange[1], interval)
         omega = freq*2*np.pi
         #k1 = /beta* H_bar = 1.43878e-11 * 1/T
-        k1 = 1.43878e-11/T
+        k1 = 7.6382e-12/T
         C1 = np.exp(-k1*omega/2)
         C2 = np.exp(-k1*omega)
         #Vectorize the operation:
         C1 = np.tile(C1,(parallelRowCnt,1))
         C2 = np.tile(C2,(parallelRowCnt,1))
-        n  = np.arange(0,maxn,rowInterval).reshape(parallelRowCnt,1) #create basis for power of n
+        n  = np.arange(0,int(maxn),rowInterval).reshape(parallelRowCnt,1) #create basis for power of n
         n = np.tile(n,(1,interval))
 
         #P = C1*Sum(C2^n)
@@ -78,16 +81,16 @@ class SimpleHarmonicOscillatorPF:
             plt.plot(T,P)
             #simple profiling:
             print('PF takes seconds:'+str(time.time()-start_time))
-
+            plt.title('Fast PF for SMO')
             plt.show()
-        return P
+        return [T,P]
 
-    def PF(self,tmpRange,freq=3e12, interval = 50,maxn = 1e7,graph = True):
+    def PF(self,tmpRange,freq=3e12, interval = 50,maxn = 1e5,graph = True):
         start_Time = time.time()
         T = np.linspace( tmpRange[0], tmpRange[1], interval)
         omega = freq*2*np.pi
         #k1 = /beta* H_bar = 1.43878e-11 * 1/T
-        k1 = 1.43878e-11/T
+        k1 = 7.6382e-12/T
         C1 = np.exp(-k1*omega/2)
         C2 = np.exp(-k1*omega)
 
@@ -101,8 +104,10 @@ class SimpleHarmonicOscillatorPF:
         if graph:
             plt.plot(T,P)
             print('Base PF takes second:'+str(time.time()-start_Time))
+            plt.title('Base PF for SMO')
             plt.show()
-        return P    
+        self.PF = [T,P]
+        return [T,P]    
 
     #
     #TODO:Consider Make FE,AE,S to be a generic function. Here, we use analytical Solution
@@ -112,23 +117,56 @@ class SimpleHarmonicOscillatorPF:
 
     #Free Energy
     #For Now: use analytic solutions
-    def FE(self,x,graph = False):
+    def FE_Theory(self,x,graph = False):
         beta = [1 / Kb * v for v in x]
         y = [Heta*self.freq/2 + (1/b)*np.log(1-np.exp(-b*Heta*self.freq)) for b in beta]
         if graph:
             plt.plt(beta,y)
             plt.show()
         return y
+    #def FE(self,tmpRange,graph = False):
+
+        
 
     #Average Energy
-    def AE(self,x, graph = False):
-        beta = [1 / Kb * v for v in x]
-        y = [Heta * self.freq / 2 + (Heta*self.freq*np.exp(-b*Heta*self.freq)) / (1 - np.exp(-b * Heta * self.freq)) for b in beta]
+    def AE_Theory(self,PF, graph = False):
+        [T,_]= PF
+        omega = self.freq*2*np.pi
+        #k1 = /beta* H_bar = 1.43878e-11 * 1/T
+        k1 = 7.6382e-12/T
+        E = HETA*omega*( 1/2+1/(np.exp(k1*omega)-1) )
+        #All energy is expressed as E/Kb
+        E = E/Kb
         if graph:
-            plt.plot(beta,y)
+            plt.plot(T,E)
             plt.show()
-        return y
+        return [T,E]
+    #PF = [T,P] : an array of two elements. 0th Element: Temeprature, 1st Element: Partition Function
+    def AE(self,PF,graph = True):
+       #Average Energy/Kb = T^2* d(ln(Z))/d(T)
+       #As Numpy has accuracy limit, the energy will be expressed as E/Kb
 
+       T = PF[0]
+       P = PF[1]
+       In_Z = np.log(P)
+       pdb.set_trace()
+       deltaT = T[1]-T[0]
+       Eavg = T*T*np.gradient(In_Z,deltaT)
+       [T_theory,E_theory] = self.AE_Theory(PF)
+       if graph:
+           plt.plot(T,Eavg,label='Approximated')
+           plt.plot(T_theory,E_theory,label='Theory')
+           plt.ylabel("<E>/Kb")
+           plt.xlabel("Temeprate (K)")
+           plt.title("Average Energy VS Temperature for SHO")
+           plt.legend()
+
+           plt.show()
+
+       return [T,Eavg]
+         
+       
+            
     def Entropy(self,x, graph = False):
         beta = [1 / Kb * v for v in x]
         #k*ln(1-e^(-b*h*v))
@@ -211,15 +249,10 @@ def centerDifferenceMethod(self,x=[],y=[]):
 
 def demonstration():
     print("Usage Demonstration")
-    freq = 100
-    nu = np.linspace(1, 10, num=100)
-    sho1d = SimpleHarmonicOscillatorPF(freq)
-    sho1d.PF([100,373],1000)
-    sho1d.PF_Fast([100,373],1000)
-    sho1d.PF_Theory([100,373],1000)
-   #sho1d.PF_Theory(nu)
-    #sho1d.Entropy(nu)
-    #sho1d.AE(nu)
+    sho1d = SimpleHarmonicOscillatorPF()
+    sho1d.PF([100,373])
+    PFsho=sho1d.PF_Theory([100,373])
+    sho1d.AE(PF=PFsho)
 
 
 if __name__ == "__main__":
