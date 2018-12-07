@@ -124,7 +124,8 @@ class SimpleHarmonicOscillatorPF:
             plt.plt(beta,y)
             plt.show()
         return y
-    #def FE(self,tmpRange,graph = False):
+    def FE(self,tmpRange,graph = True):
+        pass
 
         
 
@@ -135,8 +136,7 @@ class SimpleHarmonicOscillatorPF:
         #k1 = /beta* H_bar = 1.43878e-11 * 1/T
         k1 = 7.6382e-12/T
         E = HETA*omega*( 1/2+1/(np.exp(k1*omega)-1) )
-        #All energy is expressed as E/Kb
-        E = E/Kb
+        #All energy is expressed as E
         if graph:
             plt.plot(T,E)
             plt.show()
@@ -144,19 +144,18 @@ class SimpleHarmonicOscillatorPF:
     #PF = [T,P] : an array of two elements. 0th Element: Temeprature, 1st Element: Partition Function
     def AE(self,PF,graph = True):
        #Average Energy/Kb = T^2* d(ln(Z))/d(T)
-       #As Numpy has accuracy limit, the energy will be expressed as E/Kb
+       #As Numpy has accuracy limit, the energy will be expressed as E
 
        T = PF[0]
        P = PF[1]
        In_Z = np.log(P)
-       pdb.set_trace()
        deltaT = T[1]-T[0]
-       Eavg = T*T*np.gradient(In_Z,deltaT)
+       Eavg = Kb*T*T*np.gradient(In_Z,deltaT)
        [T_theory,E_theory] = self.AE_Theory(PF)
        if graph:
            plt.plot(T,Eavg,label='Approximated')
            plt.plot(T_theory,E_theory,label='Theory')
-           plt.ylabel("<E>/Kb")
+           plt.ylabel("<E> (J)")
            plt.xlabel("Temeprate (K)")
            plt.title("Average Energy VS Temperature for SHO")
            plt.legend()
