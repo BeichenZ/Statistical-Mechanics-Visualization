@@ -31,7 +31,7 @@ class SimpleHarmonicOscillatorPF:
     #def PF(self,tmpRange,freq, interval = 50,maxn = 100,graph = True):
      #   T = np.linspace( tmpRange[0], tmpRange[1], interval)
       #  Freq: frequency of SHO. Note: due to accuracy of the small number, the summation is not accurate under lower frequency.The default freq is 300GHz at infra-red range
-    def PF_Theory(self,tmpRange,freq=3e12,interval = 50 ,graph = True):
+    def PF_Theory(self,tmpRange,freq=3e12,interval = 50 ,graph = False):
         T = np.linspace( tmpRange[0], tmpRange[1], interval)
         omega = freq*2*np.pi
         #k1 = beta* H_bar = 1.43878e-11 * 1/T
@@ -70,7 +70,6 @@ class SimpleHarmonicOscillatorPF:
         #P = C1*Sum(C2^n)
         P = np.zeros((parallelRowCnt,interval))
         for adder in range(rowInterval):
-            #pdb.set_trace()
             P = P + np.power(C2,n)   
         P = P * C1 
         
@@ -99,13 +98,21 @@ class SimpleHarmonicOscillatorPF:
         for n in range(int(maxn)):
             P = P + np.power(C2,n)   
         P = P * C1 
-         
+        
+        [T_theory,P_theory] = self.PF_Theory(tmpRange)
         #Plot Partition Function VS Temeprature
         if graph:
-            plt.plot(T,P)
-            print('Base PF takes second:'+str(time.time()-start_Time))
-            plt.title('Base PF for SMO')
-            plt.show()
+           print('Base PF takes second:'+str(time.time()-start_Time))
+           fig = plt.figure()
+           ax = fig.add_subplot(1,2,1)
+           ax.plot(T,P,'g',label='Approximated')
+           ax.legend()
+           ax = fig.add_subplot(1,2,2)
+           ax.plot(T_theory,P_theory,'r',label='Theory')
+           ax.legend()
+           fig.suptitle('Average Partion Function VS Temeprature')
+           plt.savefig('Parition Function For Simple Harmonic Oscillator.png')
+           plt.show()
         self.PF = [T,P]
         return [T,P]    
 
@@ -122,7 +129,6 @@ class SimpleHarmonicOscillatorPF:
         omega = self.freq*2*np.pi
         k1 = 7.6382e-12/T
         A = HETA*omega/2 + (Kb*T)*np.log(1 - np.exp(-k1*omega))
-        pdb.set_trace()
         if graph:
             plt.plt(beta,y)
             plt.show()
@@ -133,14 +139,16 @@ class SimpleHarmonicOscillatorPF:
         A = -(Kb*T)*np.log(P)
         [T_theory,A_theory] = self.FE_Theory(PF) 
         if graph:
-           plt.plot(T,A,label='Approximated')
-           plt.plot(T_theory,A_theory,label='Theory')
-           plt.ylabel("<Average Free Energy> (J)")
-           plt.xlabel("Temeprate (K)")
-           plt.title("Average Free Energy VS Temperature for SHO")
-           plt.legend()
+           fig = plt.figure()
+           ax = fig.add_subplot(1,2,1)
+           ax.plot(T,A,'g',label='Approximated')
+           ax.legend()
+           ax = fig.add_subplot(1,2,2)
+           ax.plot(T_theory,A_theory,'r',label='Theory')
+           ax.legend()
+           fig.suptitle('Average Free Energy VS Temeprature')
+           plt.savefig('Free Energy For Simple Harmonic Oscillator.png')
            plt.show()
-
         return [T,A]
         
 
@@ -168,13 +176,15 @@ class SimpleHarmonicOscillatorPF:
        Eavg = Kb*T*T*np.gradient(In_Z,deltaT)
        [T_theory,E_theory] = self.AE_Theory(PF)
        if graph:
-           plt.plot(T,Eavg,label='Approximated')
-           plt.plot(T_theory,E_theory,label='Theory')
-           plt.ylabel("<E> (J)")
-           plt.xlabel("Temeprate (K)")
-           plt.title("Average Energy VS Temperature for SHO")
-           plt.legend()
-
+           fig = plt.figure()
+           ax = fig.add_subplot(1,2,1)
+           ax.plot(T,Eavg,'g',label='Approximated')
+           ax.legend()
+           ax = fig.add_subplot(1,2,2)
+           ax.plot(T_theory,E_theory,'r',label='Theory')
+           ax.legend()
+           fig.suptitle('Average Energy VS Temeprature')
+           plt.savefig('Mean Energy For Simple Harmonic Oscillator.png')
            plt.show()
 
        return [T,Eavg]
@@ -266,7 +276,6 @@ def SHO_Demonstration():
     graph = True
     sho1d = SimpleHarmonicOscillatorPF()
     PFsho = sho1d.PF([100,373],graph=graph)
-    sho1d.PF_Theory([100,373],graph=graph)
     sho1d.AE(PF=PFsho,graph=graph)
     sho1d.FE(PF=PFsho,graph=graph)
 
