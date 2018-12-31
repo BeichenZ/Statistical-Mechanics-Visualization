@@ -35,10 +35,11 @@ class SimpleHarmonicOscillatorPF:
         T = np.linspace( tmpRange[0], tmpRange[1], interval)
         omega = freq*2*np.pi
         #k1 = beta* H_bar = 1.43878e-11 * 1/T
-        k1 = 7.6382e-12/T
-        P = np.exp(-0.5*k1*omega)/(1-np.exp(-k1*omega))
+        hv_k = 1.05457e-34*freq*2*np.pi/(1.38064e-23)
+        hv_kT = hv_k/T
+        P = np.exp(-0.5*hv_kT)/(1-np.exp(-hv_kT))
         if graph:
-            plt.plot(T,P)
+            plt.plot(hv_kT,P)
             plt.title('Theoretical PF for SMO at Freq:%f' % freq)
             plt.show()
         return [T,P]
@@ -51,6 +52,10 @@ class SimpleHarmonicOscillatorPF:
     #TODO: This function is fast buy not accurate under current maxn. Require further look
     def PF_Fast(self,tmpRange,freq=3e12, interval = 50,maxn = 1e5,graph = True):
         #simple profiling:
+        #To-Do:
+        #Plot against:y= h_bar*freq/(K_b*T)
+        #calculate PF use y, PF=f(y)
+        #But plot it in the equivalent T value:PF VS T
         start_time = time.time()
 
         parallelRowCnt = int(1e4)
@@ -89,10 +94,11 @@ class SimpleHarmonicOscillatorPF:
         T = np.linspace( tmpRange[0], tmpRange[1], interval)
         omega = freq*2*np.pi
         #k1 = /beta* H_bar = 1.43878e-11 * 1/T
-        k1 = 7.6382e-12/T
-        C1 = np.exp(-k1*omega/2)
-        C2 = np.exp(-k1*omega)
-
+         #Generate ratioX
+        hv_k = 1.05457e-34*freq*2*np.pi/(1.38064e-23)
+        hv_kT = hv_k/T
+        C1 = np.exp(-hv_kT/2)
+        C2 = np.exp(-hv_kT)
         #P = C1*Sum(C2^n)
         P = np.zeros(interval)
         for n in range(int(maxn)):
@@ -105,12 +111,12 @@ class SimpleHarmonicOscillatorPF:
            print('Base PF takes second:'+str(time.time()-start_Time))
            fig = plt.figure()
            ax = fig.add_subplot(1,2,1)
-           ax.plot(T,P,'g',label='Approximated')
+           ax.plot(hv_kT,P,'g',label='Approximated')
            ax.legend()
            ax = fig.add_subplot(1,2,2)
-           ax.plot(T_theory,P_theory,'r',label='Theory')
+           ax.plot(hv_kT,P_theory,'r',label='Theory')
            ax.legend()
-           fig.suptitle('Average Partion Function VS Temeprature')
+           fig.suptitle('Average Partion Function VS hV/K_b*T')
            plt.savefig('Parition Function For Simple Harmonic Oscillator.png')
            plt.show()
         self.PF = [T,P]
