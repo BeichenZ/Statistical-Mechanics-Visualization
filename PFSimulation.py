@@ -18,6 +18,7 @@ from scipy import constants
 Kb = 1.38064e-23
 HETA =1.054571e-34
 DMPREC = 40
+Na = 6.022e23
 class SimpleHarmonicOscillatorPF:
     #freq is a list of frequency
     def __init__(self):
@@ -120,7 +121,7 @@ class SimpleHarmonicOscillatorPF:
            plt.savefig('Parition Function For Simple Harmonic Oscillator.png')
            plt.show()
         self.PF = [T,P]
-        return [T,P]    
+        return [T,P,hv_kT,omega]    
 
     #
     #TODO:Consider Make FE,AE,S to be a generic function. Here, we use analytical Solution
@@ -130,29 +131,25 @@ class SimpleHarmonicOscillatorPF:
 
     #Free Energy
     #For Now: use analytic solutions
-    def FE_Theory(self,PF,graph = False):
-        [T,_] = PF
-        omega = self.freq*2*np.pi
-        k1 = 7.6382e-12/T
-        A = HETA*omega/2 + (Kb*T)*np.log(1 - np.exp(-k1*omega))
-        if graph:
-            plt.plt(beta,y)
-            plt.show()
+    def FE_Theory(self,PF):
+        [T,_,hv_kT,omega] = PF
+        A = HETA*omega/2 + (Kb*T)*np.log(1 - np.exp(-hv_kT))
         return [T,A]
     def FE(self,PF,graph = True):
         T = PF[0]
         P = PF[1]
+        hv_kT = PF[2]
         A = -(Kb*T)*np.log(P)
-        [T_theory,A_theory] = self.FE_Theory(PF) 
+        [_,A_theory] = self.FE_Theory(PF) 
         if graph:
            fig = plt.figure()
            ax = fig.add_subplot(1,2,1)
-           ax.plot(T,A,'g',label='Approximated')
+           ax.plot(hv_kT,A,'g',label='Approximated')
            ax.legend()
            ax = fig.add_subplot(1,2,2)
-           ax.plot(T_theory,A_theory,'r',label='Theory')
+           ax.plot(hv_kT,A_theory,'r',label='Theory')
            ax.legend()
-           fig.suptitle('Average Free Energy VS Temeprature')
+           fig.suptitle('Average Free Energy VS hv/(k_b*T)')
            plt.savefig('Free Energy For Simple Harmonic Oscillator.png')
            plt.show()
         return [T,A]
@@ -160,7 +157,7 @@ class SimpleHarmonicOscillatorPF:
 
     #Average Energy
     def AE_Theory(self,PF, graph = False):
-        [T,_]= PF
+        [T,_,_,_]= PF
         omega = self.freq*2*np.pi
         #k1 = /beta* H_bar = 1.43878e-11 * 1/T
         k1 = 7.6382e-12/T
@@ -177,6 +174,7 @@ class SimpleHarmonicOscillatorPF:
 
        T = PF[0]
        P = PF[1]
+       hv_kT = PF[2]
        In_Z = np.log(P)
        deltaT = T[1]-T[0]
        Eavg = Kb*T*T*np.gradient(In_Z,deltaT)
@@ -184,10 +182,10 @@ class SimpleHarmonicOscillatorPF:
        if graph:
            fig = plt.figure()
            ax = fig.add_subplot(1,2,1)
-           ax.plot(T,Eavg,'g',label='Approximated')
+           ax.plot(hv_kT,Eavg,'g',label='Approximated')
            ax.legend()
            ax = fig.add_subplot(1,2,2)
-           ax.plot(T_theory,E_theory,'r',label='Theory')
+           ax.plot(hv_kT,E_theory,'r',label='Theory')
            ax.legend()
            fig.suptitle('Average Energy VS Temeprature')
            plt.savefig('Mean Energy For Simple Harmonic Oscillator.png')
@@ -215,21 +213,34 @@ class SimpleHarmonicOscillatorPF:
 #Sturge, Qn 5.5, Part F.Treat it as an ideal gas
 class diatomicPF():
     #TODO: set to real values of E0 and R0
-    E0 = 1.1
-    R0 = 1
-    def __init__(self, maxJ = 100, tRange = [1,3000]):
+    #Rotation Constant of Carbon Oxide Used was cited from http://adsabs.harvard.edu/abs/1965JMoSp..18..418R
+    E0_CO = 1.922521
+    #R0= Na*Kb
+    R0 = Na*Kb
+    def __init__(self,E0 = 0,maxJ = 100,):
         self.maxJ = maxJ
-        self.tRange = tRange
+        self.E0 = E0 if E0 != 0 else self.E0_CO
 
-    def PF(self, graph = False):
+     def PF(self,tmpRange,interval = 50,maxj = 1e5,graph = True):
+        T = np.linspace( tmpRange[0], tmpRange[0], interval)
         def g(j):
             return 2*j+1
         def E(j):
-            return E0*j*(j+1)
-        T = np.linspace( self.tRange[0], self.tRange[1], 100)
-        Y = [ self.PFonT(g,E,t) for t in T  ]
+            return self.E0*j*(j+1)
+        #Y = [ self.PFonT(g,E,t) for t in T  ]
+        P = np.zeros(interval)
+        beta = 1/(1.38e-23*T)
+        for j in range(int(maxj)):
+            P = P + g(j)*np.power(beta*E(j))
+        
+        #calculate internal energy U
+        #Here we assume N = Na
+        ln_P = numpy.log(P)
+        
+        
+        #Crot = -N*d(ln(P))/d(beta)
         if graph:
-            plt.plot(T,Y)
+            plt.plot(T,P)
             plt.show()
         return [T,Y]
 
@@ -276,6 +287,10 @@ def centerDifferenceMethod(self,x=[],y=[]):
     for i in range(1,len(x)):
         dY[i] = (y[i+1]-y[i-1])/(x[i+1]-x[i-1])
     return []
+#Method 2: Use 1D guassian filter
+#Source: https://stackoverflow.com/questions/18991408/python-finite-difference-functions
+#Method 3: Use more level of forward difference
+#Source:https://www.geometrictools.com/Documentation/FiniteDifferences.pdf
 
 def SHO_Demonstration():
     print("Usage Demonstration")
@@ -284,6 +299,7 @@ def SHO_Demonstration():
     PFsho = sho1d.PF([100,373],graph=graph)
     sho1d.AE(PF=PFsho,graph=graph)
     sho1d.FE(PF=PFsho,graph=graph)
+    diatomicCO = diatomicPF()
 
 if __name__ == "__main__":
     DM.getcontext().prec = DMPREC
