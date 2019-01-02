@@ -19,6 +19,7 @@ Kb = 1.38064e-23
 HETA =1.054571e-34
 DMPREC = 40
 Na = 6.022e23
+C = 3e8
 class SimpleHarmonicOscillatorPF:
     #freq is a list of frequency
     def __init__(self):
@@ -214,33 +215,41 @@ class SimpleHarmonicOscillatorPF:
 class diatomicPF():
     #TODO: set to real values of E0 and R0
     #Rotation Constant of Carbon Oxide Used was cited from http://adsabs.harvard.edu/abs/1965JMoSp..18..418R
-    E0_CO = 1.922521
+    #The value is represented in wavenumber, i.e:1/cm, therefore, it needs to be converted to energy unit
+    B0_CO = 1.922521
+    E0_CO = B0_CO*100*HETA*C
     #R0= Na*Kb
     R0 = Na*Kb
     def __init__(self,E0 = 0,maxJ = 100,):
         self.maxJ = maxJ
         self.E0 = E0 if E0 != 0 else self.E0_CO
 
-     def PF(self,tmpRange,interval = 50,maxj = 1e5,graph = True):
-        T = np.linspace( tmpRange[0], tmpRange[0], interval)
+    def PF(self,tmpRange,interval = 1000,maxj = 1e5,graph = True):
+        T = np.linspace( tmpRange[0], tmpRange[1], interval)
         def g(j):
             return 2*j+1
         def E(j):
             return self.E0*j*(j+1)
         #Y = [ self.PFonT(g,E,t) for t in T  ]
         P = np.zeros(interval)
-        beta = 1/(1.38e-23*T)
+        beta = 1/(Kb*T)
         for j in range(int(maxj)):
-            P = P + g(j)*np.power(beta*E(j))
+            P = P + g(j)*np.exp(-beta*E(j))
         
         #calculate internal energy U
         #Here we assume N = Na
-        ln_P = numpy.log(P)
+        ln_P = np.log(P)
+        dPdBt = np.gradient(P,beta)
+        U = -(1/P)*dPdBt
+        Crot = np.gradient(U,T)
+        Y = Crot/Kb
+        X = Kb*T/self.E0
+        
         
         
         #Crot = -N*d(ln(P))/d(beta)
         if graph:
-            plt.plot(T,P)
+            plt.plot(X[1:-1],Y[1:-1])
             plt.show()
         return [T,Y]
 
@@ -296,10 +305,11 @@ def SHO_Demonstration():
     print("Usage Demonstration")
     graph = True
     sho1d = SimpleHarmonicOscillatorPF()
-    PFsho = sho1d.PF([100,373],graph=graph)
+    PFsho = sho1d.PF([100,300],graph=graph)
     sho1d.AE(PF=PFsho,graph=graph)
     sho1d.FE(PF=PFsho,graph=graph)
     diatomicCO = diatomicPF()
+    diatomicCO.PF([100,105])
 
 if __name__ == "__main__":
     DM.getcontext().prec = DMPREC
