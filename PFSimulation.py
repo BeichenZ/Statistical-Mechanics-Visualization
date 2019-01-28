@@ -1,8 +1,5 @@
-import decimal as DM
 import math
-from decimal import Decimal as dm
 import numpy as np
-import mpmath
 import matplotlib.pyplot as plt
 import pdb
 import time
@@ -20,13 +17,11 @@ HETA =1.054571e-34
 DMPREC = 40
 Na = 6.022e23
 C = 3e8
-class SimpleHarmonicOscillatorPF:
+class SimpleHarmonicOscillator:
     #freq is a list of frequency
     def __init__(self):
         self.freq = 3e12 #Default Natural Frequency which will make the simulation converge at fa faster rate
         self.interval = 50 #number of data points in the plot
-        #Set decimal precision
-        DM.getcontext().prec= DMPREC
 
     #Produce a graph with respect to beta
     #x: a serie of temperatures to be plotted against
@@ -120,7 +115,7 @@ class SimpleHarmonicOscillatorPF:
            ax.legend()
            fig.suptitle('Average Partion Function VS hV/K_b*T')
            plt.savefig('Parition Function For Simple Harmonic Oscillator.png')
-           plt.show()
+           plt.show();
         self.PF = [T,P]
         return [T,P,hv_kT,omega]    
 
@@ -216,15 +211,16 @@ class diatomicPF():
     #TODO: set to real values of E0 and R0
     #Rotation Constant of Carbon Oxide Used was cited from http://adsabs.harvard.edu/abs/1965JMoSp..18..418R
     #The value is represented in wavenumber, i.e:1/cm, therefore, it needs to be converted to energy unit
+    H_planck = 6.6204e-34
     B0_CO = 1.922521
-    E0_CO = B0_CO*100*HETA*C
+    E0_CO = B0_CO*100*H_planck*C
     #R0= Na*Kb
     R0 = Na*Kb
     def __init__(self,E0 = 0,maxJ = 100,):
         self.maxJ = maxJ
         self.E0 = E0 if E0 != 0 else self.E0_CO
 
-    def PF(self,tmpRange,interval = 1000,maxj = 1e5,graph = True):
+    def PF(self,tmpRange,interval = 100,maxj = 1e5,graph = True):
         T = np.linspace( tmpRange[0], tmpRange[1], interval)
         def g(j):
             return 2*j+1
@@ -232,24 +228,33 @@ class diatomicPF():
             return self.E0*j*(j+1)
         #Y = [ self.PFonT(g,E,t) for t in T  ]
         P = np.zeros(interval)
+        C1 = self.E0/Kb
         beta = 1/(Kb*T)
         for j in range(int(maxj)):
-            P = P + g(j)*np.exp(-beta*E(j))
+            tmp1 = np.exp(-1/T*C1)
+            P = P + g(j)*np.power(tmp1,j*(j+1))
         
         #calculate internal energy U
         #Here we assume N = Na
         ln_P = np.log(P)
-        dPdBt = np.gradient(P,beta)
-        U = -(1/P)*dPdBt
+        U = - np.gradient(ln_P,beta)
         Crot = np.gradient(U,T)
         Y = Crot/Kb
-        X = Kb*T/self.E0
+        Y = Y[:-5]
+        X = T*Kb/self.E0
+        X = X[:-5]
         
         
         
         #Crot = -N*d(ln(P))/d(beta)
         if graph:
-            plt.plot(X[1:-1],Y[1:-1])
+            fig = plt.figure()
+            ax = fig.add_subplot(1,1,1)
+            ax.plot(X,Y,'g')
+            plt.xlabel('T*Kb/E0')
+            plt.ylabel('Crot/R0')
+            fig.suptitle('Diatomic Molecule Heat Capacity Vs Temperature, Sturge P101')
+            plt.savefig('Diatomic Molecule Crot VS T.png')
             plt.show()
         return [T,Y]
 
@@ -302,16 +307,15 @@ def centerDifferenceMethod(self,x=[],y=[]):
 #Source:https://www.geometrictools.com/Documentation/FiniteDifferences.pdf
 
 def SHO_Demonstration():
-    print("Usage Demonstration")
     graph = True
-    sho1d = SimpleHarmonicOscillatorPF()
+    print("Usage Demonstration")
+    sho1d = SimpleHarmonicOscillator()
     PFsho = sho1d.PF([100,300],graph=graph)
     sho1d.AE(PF=PFsho,graph=graph)
     sho1d.FE(PF=PFsho,graph=graph)
     diatomicCO = diatomicPF()
-    diatomicCO.PF([100,105])
+    diatomicCO.PF([1,200])
 
 if __name__ == "__main__":
-    DM.getcontext().prec = DMPREC
     SHO_Demonstration()
     
