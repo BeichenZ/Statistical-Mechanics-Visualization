@@ -130,14 +130,14 @@ class SimpleHarmonicOscillator:
     def FE_Theory(self,PF):
         [T,_,hv_kT,omega] = PF
         #A = HETA*omega/2 + (Kb*T)*np.log(1 - np.exp(-hv_kT))
-        A = HETA*omega/(2*Kb*T) + np.log(1 - np.exp(-hv_kT))
+        A = HETA*omega/(2*Kb) + T*np.log(1 - np.exp(-hv_kT))
         return [T,A]
     def FE(self,PF,graph = True):
         T = PF[0]
         P = PF[1]
         hv_kT = PF[2]
         #A = -(Kb*T)*np.log(P)
-        A = -np.log(P)
+        A = -T*np.log(P)
         [_,A_theory] = self.FE_Theory(PF) 
         if graph:
            fig = plt.figure()
@@ -159,7 +159,7 @@ class SimpleHarmonicOscillator:
         omega = self.freq*2*np.pi
         #k1 = /beta* H_bar = 1.43878e-11 * 1/T
         k1 = 7.6382e-12/T
-        E = HETA*omega*( 1/2+1/(np.exp(k1*omega)-1) )/(Kb*T)
+        E = HETA*omega*( 1/2+1/(np.exp(k1*omega)-1) )/Kb
         #All energy is expressed as E
         if graph:
             plt.plot(T,E)
@@ -175,8 +175,8 @@ class SimpleHarmonicOscillator:
        hv_kT = PF[2]
        In_Z = np.log(P)
        deltaT = T[1]-T[0]
-       #Eavg = Kb*T*T*np.gradient(In_Z,deltaT)
-       Eavg = np.gradient(In_Z,deltaT)
+       #Eavg = Kb*T*np.gradient(In_Z,deltaT)
+       Eavg = -1/(T*T)*np.gradient(In_Z,deltaT)
        [T_theory,E_theory] = self.AE_Theory(PF)
        if graph:
            fig = plt.figure()
