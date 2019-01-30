@@ -129,13 +129,15 @@ class SimpleHarmonicOscillator:
     #For Now: use analytic solutions
     def FE_Theory(self,PF):
         [T,_,hv_kT,omega] = PF
-        A = HETA*omega/2 + (Kb*T)*np.log(1 - np.exp(-hv_kT))
+        #A = HETA*omega/2 + (Kb*T)*np.log(1 - np.exp(-hv_kT))
+        A = HETA*omega/(2*Kb*T) + np.log(1 - np.exp(-hv_kT))
         return [T,A]
     def FE(self,PF,graph = True):
         T = PF[0]
         P = PF[1]
         hv_kT = PF[2]
-        A = -(Kb*T)*np.log(P)
+        #A = -(Kb*T)*np.log(P)
+        A = -np.log(P)
         [_,A_theory] = self.FE_Theory(PF) 
         if graph:
            fig = plt.figure()
@@ -145,7 +147,7 @@ class SimpleHarmonicOscillator:
            ax = fig.add_subplot(1,2,2)
            ax.plot(hv_kT,A_theory,'r',label='Theory')
            ax.legend()
-           fig.suptitle('Average Free Energy VS hv/(k_b*T)')
+           fig.suptitle('Average Free Energy/kT VS Temperature hv/kT')
            plt.savefig('Free Energy For Simple Harmonic Oscillator.png')
            plt.show()
         return [T,A]
@@ -157,7 +159,7 @@ class SimpleHarmonicOscillator:
         omega = self.freq*2*np.pi
         #k1 = /beta* H_bar = 1.43878e-11 * 1/T
         k1 = 7.6382e-12/T
-        E = HETA*omega*( 1/2+1/(np.exp(k1*omega)-1) )
+        E = HETA*omega*( 1/2+1/(np.exp(k1*omega)-1) )/(Kb*T)
         #All energy is expressed as E
         if graph:
             plt.plot(T,E)
@@ -173,7 +175,8 @@ class SimpleHarmonicOscillator:
        hv_kT = PF[2]
        In_Z = np.log(P)
        deltaT = T[1]-T[0]
-       Eavg = Kb*T*T*np.gradient(In_Z,deltaT)
+       #Eavg = Kb*T*T*np.gradient(In_Z,deltaT)
+       Eavg = np.gradient(In_Z,deltaT)
        [T_theory,E_theory] = self.AE_Theory(PF)
        if graph:
            fig = plt.figure()
@@ -183,7 +186,7 @@ class SimpleHarmonicOscillator:
            ax = fig.add_subplot(1,2,2)
            ax.plot(hv_kT,E_theory,'r',label='Theory')
            ax.legend()
-           fig.suptitle('Average Energy VS Temeprature')
+           fig.suptitle('Average Energy/kT VS Temeprature(hv/kT)')
            plt.savefig('Mean Energy For Simple Harmonic Oscillator.png')
            plt.show()
 
@@ -310,11 +313,11 @@ def SHO_Demonstration():
     graph = True
     print("Usage Demonstration")
     sho1d = SimpleHarmonicOscillator()
-    PFsho = sho1d.PF([100,300],graph=graph)
-    sho1d.AE(PF=PFsho,graph=graph)
-    sho1d.FE(PF=PFsho,graph=graph)
-    diatomicCO = diatomicPF()
-    diatomicCO.PF([1,200])
+    PFsho = sho1d.PF([10,500],graph=graph)
+    #sho1d.AE(PF=PFsho,graph=graph)
+    #sho1d.FE(PF=PFsho,graph=graph)
+   # diatomicCO = diatomicPF()
+    #diatomicCO.PF([1,200])
 
 if __name__ == "__main__":
     SHO_Demonstration()
