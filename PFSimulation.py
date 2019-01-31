@@ -54,7 +54,7 @@ class SimpleHarmonicOscillator:
         #calculate PF use y, PF=f(y)
         #But plot it in the equivalent T value:PF VS T
         start_time = time.time()
-
+        self.freq = freq
         parallelRowCnt = int(1e4)
         rowInterval = int(maxn/parallelRowCnt)
         T = np.linspace( tmpRange[0], tmpRange[1], interval)
@@ -89,11 +89,13 @@ class SimpleHarmonicOscillator:
     def PF(self,tmpRange,freq=3e12, interval = 50,maxn = 1e5,graph = True):
         start_Time = time.time()
         T = np.linspace( tmpRange[0], tmpRange[1], interval)
+        self.T = T
         omega = freq*2*np.pi
         #k1 = /beta* H_bar = 1.43878e-11 * 1/T
          #Generate ratioX
         hv_k = 1.05457e-34*freq*2*np.pi/(1.38064e-23)
         hv_kT = hv_k/T
+        self.hv_kT = hv_kT
         C1 = np.exp(-hv_kT/2)
         C2 = np.exp(-hv_kT)
         #P = C1*Sum(C2^n)
@@ -153,6 +155,7 @@ class SimpleHarmonicOscillator:
         hv_kT = PF[2]
         #A = -(Kb*T)*np.log(P)
         A = -T*np.log(P)
+        self.FEvalue = A*Kb
         [_,A_theory] = self.FE_Theory(PF) 
         if graph:
            fig = plt.figure()
@@ -209,7 +212,7 @@ class SimpleHarmonicOscillator:
          
        
             
-    def Entropy(self,x, graph = False):
+    def Entropy2(self,x, graph = False):
         beta = [1 / Kb * v for v in x]
         #k*ln(1-e^(-b*h*v))
         c1 =[ - Kb*np.log( 1-np.exp( -b*Heta*self.freq) ) for b in beta]
@@ -223,6 +226,35 @@ class SimpleHarmonicOscillator:
             plt.plot(beta, S)
             plt.show()
         return S
+    def Entropy(self,graph = True):
+        #-dF/dT
+        #http://www.nyu.edu/classes/tuckerman/stat.mech/lectures/lecture_13/node8.html
+        FEv = self.FEvalue
+        T = self.T
+        deltaT = T[1]-T[0]
+        #Eavg = Kb*T*np.gradient(In_Z,deltaT)
+        S = -np.gradient(FEv,deltaT)
+        S = S/Kb
+        newX = 1/self.hv_kT
+        S_Theory = self.Entropy_Theory()/Kb
+        if graph:
+           fig = plt.figure()
+           ax = fig.add_subplot(1,2,1)
+           ax.plot(newX,S,'g',label='Approximated')
+           ax.legend()
+           ax = fig.add_subplot(1,2,2)
+           ax.plot(newX,S_Theory,'r',label='Theory')
+           ax.legend()
+           fig.suptitle('S/Kb VS Temperature kT/hv')
+           plt.savefig('Entropy for SHM.png')
+           plt.show()
+    def Entropy_Theory(self):
+        beta = 1/(Kb*self.T)
+        left = -Kb*np.log(1 - np.exp(-beta*HETA*2*np.pi*self.freq))
+        right = (HETA*2*np.pi*self.freq/self.T)*(np.exp(-beta*2*np.pi*self.freq*HETA)/(1-np.exp(-beta*2*np.pi*self.freq*HETA)))
+        return left+right
+        
+        
 
 #Sturge, Qn 5.5, Part F.Treat it as an ideal gas
 class diatomicPF():
