@@ -92,8 +92,6 @@ class SimpleHarmonicOscillator:
         self.beta = 1/(Kb*T)
         self.T = T
         omega = freq*2*np.pi
-        #k1 = /beta* H_bar = 1.43878e-11 * 1/T
-         #Generate ratioX
         hv_k = 1.05457e-34*freq*2*np.pi/(1.38064e-23)
         hv_kT = hv_k/T
         self.hv_kT = hv_kT
@@ -152,16 +150,18 @@ class SimpleHarmonicOscillator:
     def FE_Theory(self,PF):
         [T,_,hv_kT,omega] = PF
         #A = HETA*omega/2 + (Kb*T)*np.log(1 - np.exp(-hv_kT))
-        A = HETA*omega/(2*Kb) + T*np.log(1 - np.exp(-hv_kT))
+        A = HETA*2*np.pi*self.freq/2 + np.log(1-np.exp(-self.beta*HETA*2*np.pi*self.freq))/self.beta
         return [T,A]
     def FE(self,PF,graph = True):
         T = PF[0]
         P = PF[1]
         hv_kT = PF[2]
         #A = -(Kb*T)*np.log(P)
-        A = -T*np.log(P)
-        self.FEvalue = A*Kb
-        [_,A_theory] = self.FE_Theory(PF) 
+        A = -(Kb*T)*np.log(P)
+        self.FEvalue = A
+        A = A/Kb #the actual printed value
+        [_,A_theory] = self.FE_Theory(PF)
+        A_theory = A_theory/Kb #the actual printed value
         if graph:
            fig = plt.figure()
            ax = fig.add_subplot(2,2,1)
@@ -180,16 +180,12 @@ class SimpleHarmonicOscillator:
         
 
     #Average Energy
-    def AE_Theory(self,PF, graph = False):
+    def AE_Theory(self,PF):
         [T,_,_,_]= PF
         omega = self.freq*2*np.pi
         #k1 = /beta* H_bar = 1.43878e-11 * 1/T
         k1 = 7.6382e-12/T
-        E = HETA*omega*( 1/2+1/(np.exp(k1*omega)-1) )/Kb
-        #All energy is expressed as E
-        if graph:
-            plt.plot(T,E)
-            plt.show()
+        E = HETA*omega*( 1/2+ np.exp(-self.beta*HETA*2*np.pi*self.freq)/(1-np.exp(-self.beta*HETA*2*np.pi*self.freq)))
         return [T,E]
     #PF = [T,P] : an array of two elements. 0th Element: Temeprature, 1st Element: Partition Function
     def AE(self,PF,graph = True):
@@ -205,8 +201,9 @@ class SimpleHarmonicOscillator:
        #Eavg = 1/(Kb*T*T)*np.gradient(In_Z,deltaT)
        dy = - np.diff(In_Z)
        dx = np.diff(self.beta)
-       Eavg = dy/dx
+       Eavg = dy/dx/(HETA*self.freq*2*np.pi)
        [T_theory,E_theory] = self.AE_Theory(PF)
+       E_theory = E_theory/(HETA*self.freq*2*np.pi)
        if graph:
            fig = plt.figure()
            ax = fig.add_subplot(2,2,1)
@@ -216,7 +213,7 @@ class SimpleHarmonicOscillator:
            ax.plot(self.kT_hv,E_theory,'r',label='Theory')
            ax.legend()
            ax = fig.add_subplot(2,2,3)
-           ax.plot(self.kT_hv[1:],Eavg-E_theory[1:],'b',label='Diff(A-T)')
+           ax.plot(self.kT_hv[:-1],Eavg-E_theory[:-1],'b',label='Diff(A-T)')
            ax.legend()
            fig.suptitle('Average Energy/hv VS Temeprature(kT/hv)')
            plt.savefig('Mean Energy For Simple Harmonic Oscillator.png')
