@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import pdb
 import time
 from scipy import constants
+import warnings
 #Partion Function
 #Some Constants
 #
@@ -403,6 +404,35 @@ def PF_Generic(tmpRange,energyGenerator,interval = 100,maxn = 1e5,xValue = None,
             En = energyGenerator(n)
             PF = PF + np.exp(-beta*En)
     return [T,PF]
+
+#Average Free Energy
+def FE_Generic(T,PF):
+    if len(T) != len(PF):
+        warnings.warn("Dimension of Temperature and Partition Function arrays are not identical. Check you input")
+    else:
+        return [T,-(Kb*T)*np.log(PF)]
+
+#Average Internal Energy   
+def U_Generic(T,PF):
+    if len(T) != len(PF):
+        warnings.warn("Dimension of Temperature and Partition Function arrays are not identical. Check you input")
+    else:
+        beta = 1/(Kb*T)
+        ln_P = np.log(PF)
+        return [T,- np.gradient(ln_P,beta)]
+#Entropy:
+def S_Generic(T,A):
+    if len(T) != len(A):
+        warnings.warn("Dimension of Temperature and Free energy arrays are not identical. Check you input")
+    else:
+        FEv = A
+        return [T,-np.gradient(FEv,T)]
+        
+    
+    
+
+
+#Generic Functions End
 
 #2nd Order Method
 def centerDifferenceMethod(self,x=[],y=[]):
