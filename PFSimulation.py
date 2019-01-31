@@ -101,7 +101,8 @@ class SimpleHarmonicOscillator:
         P = np.zeros(interval)
         for n in range(int(maxn)):
             P = P + np.power(C2,n)   
-        P = P * C1 
+        P = P * C1
+        
         
         
         #Generic Experiment
@@ -277,7 +278,6 @@ class diatomicPF():
     H_planck = 6.6204e-34
     B0_CO = 1.922521
     E0_CO = B0_CO*100*H_planck*C
-    #R0= Na*Kb
     R0 = Na*Kb
     def __init__(self,E0 = 0,maxJ = 100,):
         self.maxJ = maxJ
@@ -285,22 +285,25 @@ class diatomicPF():
 
     def PF(self,tmpRange,interval = 100,maxj = 1e5,graph = True):
         T = np.linspace( tmpRange[0], tmpRange[1], interval)
+        self.T = T
         def g(j):
             return 2*j+1
         def E(j):
             return self.E0*j*(j+1)
-        #Y = [ self.PFonT(g,E,t) for t in T  ]
         P = np.zeros(interval)
         C1 = self.E0/Kb
         beta = 1/(Kb*T)
+        self.beta = beta
         for j in range(int(maxj)):
             tmp1 = np.exp(-1/T*C1)
             P = P + g(j)*np.power(tmp1,j*(j+1))
+        self.P = P
         
         #calculate internal energy U
         #Here we assume N = Na
         ln_P = np.log(P)
         U = - np.gradient(ln_P,beta)
+        self.U = U
         Crot = np.gradient(U,T)
         Y = Crot/Kb
         Y = Y[:-5]
@@ -308,25 +311,37 @@ class diatomicPF():
         X = X[:-5]
         
         
-        
+        PF_print = self.P
+        U_print = self.U/(Kb*T)
+        kT_E0 = Kb*T/self.E0
         #Crot = -N*d(ln(P))/d(beta)
         if graph:
             fig = plt.figure()
-            ax = fig.add_subplot(1,1,1)
+            #Heat Capacity plot
+            ax = fig.add_subplot(3,2,1)
             ax.plot(X,Y,'g')
             plt.xlabel('T*Kb/E0')
             plt.ylabel('Crot/R0')
-            fig.suptitle('Diatomic Molecule Heat Capacity Vs Temperature, Sturge P101')
+            #Partition Function Plot
+            ax = fig.add_subplot(3,2,2)
+            ax.plot(kT_E0,PF_print,'g')
+            plt.xlabel('kT/E0')
+            plt.ylabel('Z')
+            # U: average energy plot
+            ax = fig.add_subplot(3,2,3)
+            ax.plot(kT_E0,U_print,'g')
+            plt.xlabel('kT/E0')
+            plt.ylabel('U/kT')
+            # S: Entropy Plot
+            ax = fig.add_subplot(3,2,4)
+            ax.plot(X,Y,'g')
+            plt.xlabel('T*Kb/E0')
+            plt.ylabel('Crot/R0')
+            fig.suptitle('Diatomic Molecule, Sturge P101')
             plt.savefig('Diatomic Molecule Crot VS T.png')
             plt.show()
         return [T,Y]
 
-    #TODO:Vectorize the Calculation for Better efficiency
-    def PFonT(self,g , E, T):
-        acc = 0
-        for j in range( 1, self.maxJ+1 ):
-            acc = acc + g(j)*np.exp(-1/(Kb*T)*E(j))
-        return acc
 
     #pf : [T,Y] contains numerical points on the partition function
     def AE(self, pf ):
