@@ -19,10 +19,10 @@ Na = 6.022e23
 C = 3e8
 class SimpleHarmonicOscillator:
     #freq is a list of frequency
-    def __init__(self):
-        self.freq = 3e12 #Default Natural Frequency which will make the simulation converge at fa faster rate
-        self.interval = 50 #number of data points in the plot
-
+    def __init__(self,freq=3e12, interval = 50, maxn = 1e5):
+        self.freq = freq #Default Natural Frequency which will make the simulation converge at fa faster rate
+        self.interval = interval #number of data points in the plot
+        self.maxn = maxn
     #Produce a graph with respect to beta
     #x: a serie of temperatures to be plotted against
     #def PF(self,tmpRange,freq, interval = 50,maxn = 100,graph = True):
@@ -102,13 +102,22 @@ class SimpleHarmonicOscillator:
             P = P + np.power(C2,n)   
         P = P * C1 
         
+        
+        #Generic Experiment
+        def SMHEnergyGenerator(n):
+            return (n+1/2)*HETA*freq*2*np.pi
+        [T_GE,PF_GE] = PF_Generic(tmpRange,SMHEnergyGenerator,interval = interval,maxn = maxn)
+        
+        #Experimentt Ends
+        
         [T_theory,P_theory] = self.PF_Theory(tmpRange)
         #Plot Partition Function VS Temeprature
         if graph:
            print('Base PF takes second:'+str(time.time()-start_Time))
            fig = plt.figure()
            ax = fig.add_subplot(1,2,1)
-           ax.plot(hv_kT,P,'g',label='Approximated')
+           #ax.plot(hv_kT,P,'g',label='Approximated')
+           ax.plot(hv_kT,PF_GE,'g',label='Approximated')
            ax.legend()
            ax = fig.add_subplot(1,2,2)
            ax.plot(hv_kT,P_theory,'r',label='Theory')
@@ -117,7 +126,13 @@ class SimpleHarmonicOscillator:
            plt.savefig('Parition Function For Simple Harmonic Oscillator.png')
            plt.show();
         self.PF = [T,P]
-        return [T,P,hv_kT,omega]    
+        return [T,P,hv_kT,omega]
+    
+    def PF_WithGenericPF(self,tmpRange,freq=3e12, interval = 50,maxn = 1e5,graph = True):
+        def SMHEnergyGenerator(n):
+            return (n+1/2)*HETA*freq*2*np.pi
+        [T_GE,PF_GE] = self.computeEngine(tmpRange,SMHEnergyGenerator,maxn = maxn)
+        return True
 
     #
     #TODO:Consider Make FE,AE,S to be a generic function. Here, we use analytical Solution
@@ -293,26 +308,21 @@ class diatomicPF():
 #
 #General Numerical Approximation Functions
 #
-def GenericPF():
-    def __init__(self,interval = 100,maxn = 1e5):
-        self.maxn = maxn
-        self.interval = interval #number of data points in the plot
-    
-    def PF(self,tmpRange,energyGenerator,xValue = None, nlm = None,graph = True):
-        nlmMode = False
-        if nlm != None:
-            nlmMode = True
-            print("n,l,m quantum number mode is on.Please make sure energyGenerator function could take in three variables")
-        T = np.linspace( tmpRange[0], tmpRange[1], interval)     
-        T = 1/(Kb*T)
-        PF = [0]*len(T)
-        for n in range(self.maxn):
-            if nlmMode:
-                En = energyGenerator(nlm[0],nlm[1],nlm[2])
-            else:
-                En = energyGenerator(n)
-            PF = PF + np.power(-beta*En)
-        return [T,PF]
+def PF_Generic(tmpRange,energyGenerator,interval = 100,maxn = 1e5,xValue = None, nlm = None,graph = True):
+    nlmMode = False
+    if nlm != None:
+        nlmMode = True
+        print("n,l,m quantum number mode is on.Please make sure energyGenerator function could take in three variables")
+    T = np.linspace( tmpRange[0], tmpRange[1], interval)     
+    beta = 1/(Kb*T)
+    PF = [0]*len(T)
+    for n in range(int(maxn)):
+        if nlmMode:
+            En = energyGenerator(nlm[0],nlm[1],nlm[2])
+        else:
+            En = energyGenerator(n)
+            PF = PF + np.exp(-beta*En)
+    return [T,PF]
 
 #2nd Order Method
 def centerDifferenceMethod(self,x=[],y=[]):
