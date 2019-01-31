@@ -89,6 +89,7 @@ class SimpleHarmonicOscillator:
     def PF(self,tmpRange,freq=3e12, interval = 50,maxn = 1e5,graph = True):
         start_Time = time.time()
         T = np.linspace( tmpRange[0], tmpRange[1], interval)
+        self.beta = 1/(Kb*T)
         self.T = T
         omega = freq*2*np.pi
         #k1 = /beta* H_bar = 1.43878e-11 * 1/T
@@ -114,18 +115,19 @@ class SimpleHarmonicOscillator:
         
         [T_theory,P_theory] = self.PF_Theory(tmpRange)
         #Plot Partition Function VS Temeprature
+        self.kT_hv = 1/hv_kT
         if graph:
            print('Base PF takes second:'+str(time.time()-start_Time))
            fig = plt.figure()
            ax = fig.add_subplot(2,2,1)
            #ax.plot(hv_kT,P,'g',label='Approximated')
-           ax.plot(hv_kT,PF_GE,'g',label='Approximated')
+           ax.plot(self.kT_hv,PF_GE,'g',label='Approximated')
            ax.legend()
            ax = fig.add_subplot(2,2,2)
-           ax.plot(hv_kT,P_theory,'r',label='Theory')
+           ax.plot(self.kT_hv,P_theory,'r',label='Theory')
            ax.legend()
            ax = fig.add_subplot(2,2,3)
-           ax.plot(hv_kT,PF_GE-P_theory,'b',label='Diff(A-T)')
+           ax.plot(self.kT_hv,PF_GE-P_theory,'b',label='Diff(A-T)')
            ax.legend()
            fig.suptitle('Average Partion Function VS hV/K_b*T')
            plt.savefig('Parition Function For Simple Harmonic Oscillator.png')
@@ -163,13 +165,13 @@ class SimpleHarmonicOscillator:
         if graph:
            fig = plt.figure()
            ax = fig.add_subplot(2,2,1)
-           ax.plot(hv_kT,A,'g',label='Approximated')
+           ax.plot(self.kT_hv,A,'g',label='Approximated')
            ax.legend()
            ax = fig.add_subplot(2,2,2)
-           ax.plot(hv_kT,A_theory,'r',label='Theory')
+           ax.plot(self.kT_hv,A_theory,'r',label='Theory')
            ax.legend()
            ax = fig.add_subplot(2,2,3)
-           ax.plot(hv_kT,A-A_theory,'b',label='Diff(A-T)')
+           ax.plot(self.kT_hv,A-A_theory,'b',label='Diff(A-T)')
            ax.legend()
            fig.suptitle('Average Free Energy/kT VS Temperature hv/kT')
            plt.savefig('Free Energy For Simple Harmonic Oscillator.png')
@@ -200,27 +202,30 @@ class SimpleHarmonicOscillator:
        In_Z = np.log(P)
        deltaT = T[1]-T[0]
        #Eavg = Kb*T*np.gradient(In_Z,deltaT)
-       Eavg = -1/(T*T)*np.gradient(In_Z,deltaT)
+       #Eavg = 1/(Kb*T*T)*np.gradient(In_Z,deltaT)
+       dy = - np.diff(In_Z)
+       dx = np.diff(self.beta)
+       Eavg = dy/dx
        [T_theory,E_theory] = self.AE_Theory(PF)
        if graph:
            fig = plt.figure()
            ax = fig.add_subplot(2,2,1)
-           ax.plot(hv_kT,Eavg,'g',label='Approximated')
+           ax.plot(self.kT_hv[1:],Eavg,'g',label='Approximated')
            ax.legend()
            ax = fig.add_subplot(2,2,2)
-           ax.plot(hv_kT,E_theory,'r',label='Theory')
+           ax.plot(self.kT_hv,E_theory,'r',label='Theory')
            ax.legend()
            ax = fig.add_subplot(2,2,3)
-           ax.plot(hv_kT,Eavg-E_theory,'b',label='Diff(A-T)')
+           ax.plot(self.kT_hv[1:],Eavg-E_theory[1:],'b',label='Diff(A-T)')
            ax.legend()
-           fig.suptitle('Average Energy/kT VS Temeprature(hv/kT)')
+           fig.suptitle('Average Energy/hv VS Temeprature(kT/hv)')
            plt.savefig('Mean Energy For Simple Harmonic Oscillator.png')
            plt.show()
 
        return [T,Eavg]
          
        
-            
+    #Obsolete functions    
     def Entropy2(self,x, graph = False):
         beta = [1 / Kb * v for v in x]
         #k*ln(1-e^(-b*h*v))
@@ -244,18 +249,17 @@ class SimpleHarmonicOscillator:
         #Eavg = Kb*T*np.gradient(In_Z,deltaT)
         S = -np.gradient(FEv,deltaT)
         S = S/Kb
-        newX = 1/self.hv_kT
         S_Theory = self.Entropy_Theory()/Kb
         if graph:
            fig = plt.figure()
            ax = fig.add_subplot(2,2,1)
-           ax.plot(newX,S,'g',label='Approximated')
+           ax.plot(self.kT_hv,S,'g',label='Approximated')
            ax.legend()
            ax = fig.add_subplot(2,2,2)
-           ax.plot(newX,S_Theory,'r',label='Theory')
+           ax.plot(self.kT_hv,S_Theory,'r',label='Theory')
            ax.legend()
            ax = fig.add_subplot(2,2,3)
-           ax.plot(newX,S-S_Theory,'r',label='Diff(A-T)')
+           ax.plot(self.kT_hv,S-S_Theory,'r',label='Diff(A-T)')
            ax.legend()
            fig.suptitle('S/Kb VS Temperature kT/hv')
            plt.savefig('Entropy for SHM.png')
