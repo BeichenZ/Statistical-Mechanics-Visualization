@@ -314,6 +314,16 @@ class diatomicPF():
         PF_print = self.P
         U_print = self.U/(Kb*T)
         kT_E0 = Kb*T/self.E0
+        #Free Energy
+        self.FEvalue = -(Kb*T)*np.log(self.P)
+        FE_print = self.FEvalue/(Kb*T)
+        #Entropy
+        FEv = self.FEvalue
+        T = self.T
+        deltaT = T[1]-T[0]
+        self.S = -np.gradient(FEv,deltaT)
+        S_print = self.S/Kb
+        
         #Crot = -N*d(ln(P))/d(beta)
         if graph:
             fig = plt.figure()
@@ -324,19 +334,26 @@ class diatomicPF():
             plt.ylabel('Crot/R0')
             #Partition Function Plot
             ax = fig.add_subplot(3,2,2)
-            ax.plot(kT_E0,PF_print,'g')
+            ax.plot(kT_E0,PF_print,'r')
             plt.xlabel('kT/E0')
             plt.ylabel('Z')
-            # U: average energy plot
             ax = fig.add_subplot(3,2,3)
-            ax.plot(kT_E0,U_print,'g')
+            #F: Free energy
+            ax.plot(X,Y,'b')
+            plt.xlabel('kT/E0')
+            plt.ylabel('A/kT')
+            # U: average energy plot
+            ax = fig.add_subplot(3,2,4)
+            ax.plot(kT_E0,U_print,'r')
             plt.xlabel('kT/E0')
             plt.ylabel('U/kT')
-            # S: Entropy Plot
-            ax = fig.add_subplot(3,2,4)
-            ax.plot(X,Y,'g')
-            plt.xlabel('T*Kb/E0')
-            plt.ylabel('Crot/R0')
+            # S: Entropy
+            ax = fig.add_subplot(3,2,5)
+            ax.plot(kT_E0,S_print,'g')
+            plt.xlabel('kT/E0')
+            plt.ylabel('S/k')
+            
+            
             fig.suptitle('Diatomic Molecule, Sturge P101')
             plt.savefig('Diatomic Molecule Crot VS T.png')
             plt.show()
@@ -364,6 +381,9 @@ class diatomicPF():
             plt.plot(x,y)
             plt.show()
         return [T,Cv]
+    def PF_Theory(self):
+        #reference:http://faculty.washington.edu/gdrobny/Lecture453_20-15-molecular-partition.pdf
+        return True
 
 #
 #General Numerical Approximation Functions
