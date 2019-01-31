@@ -308,7 +308,7 @@ class diatomicPF():
 #
 #General Numerical Approximation Functions
 #
-def PF_Generic(tmpRange,energyGenerator,interval = 100,maxn = 1e5,xValue = None, nlm = None,graph = True):
+def PF_Generic(tmpRange,energyGenerator,interval = 100,maxn = 1e5,xValue = None, nlm = None):
     nlmMode = False
     if nlm != None:
         nlmMode = True
