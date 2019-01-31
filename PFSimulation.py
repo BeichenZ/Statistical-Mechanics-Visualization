@@ -293,8 +293,27 @@ class diatomicPF():
 #
 #General Numerical Approximation Functions
 #
-#TODO:Verify the accuracy of this method.Implement more if needed
-#
+def GenericPF():
+    def __init__(self,interval = 100,maxn = 1e5):
+        self.maxn = maxn
+        self.interval = interval #number of data points in the plot
+    
+    def PF(self,tmpRange,energyGenerator,xValue = None, nlm = None,graph = True):
+        nlmMode = False
+        if nlm != None:
+            nlmMode = True
+            print("n,l,m quantum number mode is on.Please make sure energyGenerator function could take in three variables")
+        T = np.linspace( tmpRange[0], tmpRange[1], interval)     
+        T = 1/(Kb*T)
+        PF = [0]*len(T)
+        for n in range(self.maxn):
+            if nlmMode:
+                En = energyGenerator(nlm[0],nlm[1],nlm[2])
+            else:
+                En = energyGenerator(n)
+            PF = PF + np.power(-beta*En)
+        return [T,PF]
+
 #2nd Order Method
 def centerDifferenceMethod(self,x=[],y=[]):
     #head and tail
