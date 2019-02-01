@@ -258,11 +258,13 @@ class SimpleHarmonicOscillator:
            ax.plot(self.kT_hv,S_Theory,'r',label='Theory')
            ax.legend()
            ax = fig.add_subplot(2,2,3)
-           ax.plot(self.kT_hv,S-S_Theory,'r',label='Diff(A-T)')
+           ax.plot(self.kT_hv[:-1],S[:-1]-S_Theory[:-1],'r',label='Diff(A-T)')
            ax.legend()
            fig.suptitle('S/Kb VS Temperature kT/hv')
            plt.savefig('Entropy for SHM.png')
            plt.show()
+        #cropped the first and last element due to non-well defined boundary values due to the gradient function used
+        return [T[:-1],S[:-1]]
     def Entropy_Theory(self):
         beta = 1/(Kb*self.T)
         left = -Kb*np.log(1 - np.exp(-beta*HETA*2*np.pi*self.freq))
@@ -404,6 +406,7 @@ def PF_Generic(tmpRange,energyGenerator,interval = 100,maxn = 1e5,xValue = None,
             En = energyGenerator(n)
             PF = PF + np.exp(-beta*En)
     return [T,PF]
+
 
 #Average Free Energy
 def FE_Generic(T,PF):
