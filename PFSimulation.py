@@ -285,7 +285,6 @@ class diatomicPF():
     def __init__(self,E0 = 0,maxJ = 100,):
         self.maxJ = maxJ
         self.E0 = E0 if E0 != 0 else self.E0_CO
-
     def PF(self,tmpRange,interval = 100,maxj = 1e5,graph = True):
         T = np.linspace( tmpRange[0], tmpRange[1], interval)
         self.T = T
@@ -317,6 +316,7 @@ class diatomicPF():
         PF_print = self.P
         U_print = self.U/(Kb*T)
         kT_E0 = Kb*T/self.E0
+        self.kT_E0 = kT_E0
         #Free Energy
         self.FEvalue = -(Kb*T)*np.log(self.P)
         FE_print = self.FEvalue/(Kb*T)
@@ -384,9 +384,19 @@ class diatomicPF():
             plt.plot(x,y)
             plt.show()
         return [T,Cv]
-    def PF_Theory(self):
+    def UE(self):
         #reference:http://faculty.washington.edu/gdrobny/Lecture453_20-15-molecular-partition.pdf
-        return True
+        U_print = self.U/(Kb*self.T)
+        fig = plt.figure()
+        #Heat Capacity plot
+        ax = fig.add_subplot(2,2,1)
+        ax.plot(self.kT_E0,U_print,'r')
+        plt.xlabel('kT/E0')
+        plt.ylabel('U/kT')
+        fig.suptitle('Diatomic Molecule Internal Energy')
+        plt.savefig('Diatomic Molecule Internal Energy.png')
+        plt.show()
+        return [self.kT_E0, U_print]
 
 #
 #General Numerical Approximation Functions
